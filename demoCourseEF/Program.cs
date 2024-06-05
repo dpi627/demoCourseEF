@@ -1,4 +1,7 @@
 
+using demoCourseEF.Models;
+using Microsoft.EntityFrameworkCore;
+
 namespace demoCourseEF
 {
     public class Program
@@ -13,6 +16,9 @@ namespace demoCourseEF
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddDbContext<ContosoUniversityContext>(
+        options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             var app = builder.Build();
 
