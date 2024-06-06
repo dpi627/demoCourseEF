@@ -1,4 +1,3 @@
-@demoCourseEF_HostAddress = http://localhost:5240
 @HostDomain = http://localhost:5240
 
 GET {{HostDomain}}/weatherforecast/
@@ -6,7 +5,7 @@ Accept: application/json
 
 ###
 
-GET {{HostDomain}}/api/courses
+GET {{HostDomain}}/api/courses/1/2
 Accept: application/json
 
 ###

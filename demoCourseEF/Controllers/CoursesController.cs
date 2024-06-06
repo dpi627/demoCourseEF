@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using demoCourseEF.Models;
 
@@ -21,10 +16,21 @@ namespace demoCourseEF.Controllers
         }
 
         // GET: api/Courses
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Course>>> GetCourses()
+        [HttpGet("{pageIndex}/{pageSize}")]
+        public async Task<IActionResult> GetCourses(int pageIndex, int pageSize)
         {
-            return await _context.Courses.ToListAsync();
+            var data = _context.Courses.OrderBy(c => c.CourseId).AsQueryable();
+
+            var total = await data.CountAsync();
+
+            var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+
+            var courses = await data
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return Ok(new { data = courses, total, totalPages });
         }
 
         // GET: api/Courses/5
