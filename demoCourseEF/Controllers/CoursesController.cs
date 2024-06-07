@@ -2,112 +2,111 @@
 using Microsoft.EntityFrameworkCore;
 using demoCourseEF.Models;
 
-namespace demoCourseEF.Controllers
+namespace demoCourseEF.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class CoursesController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class CoursesController : ControllerBase
+    private readonly ContosoUniversityContext _context;
+
+    public CoursesController(ContosoUniversityContext context)
     {
-        private readonly ContosoUniversityContext _context;
+        _context = context;
+    }
 
-        public CoursesController(ContosoUniversityContext context)
+    // GET: api/Courses
+    [HttpGet("{pageIndex}/{pageSize}")]
+    public async Task<IActionResult> GetCourses(int pageIndex, int pageSize)
+    {
+        var data = _context.Courses.OrderBy(c => c.CourseId).AsQueryable();
+
+        var total = await data.CountAsync();
+
+        var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+
+        var courses = await data
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return Ok(new { data = courses, total, totalPages });
+    }
+
+    // GET: api/Courses/5
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Course>> GetCourse(int id)
+    {
+        var course = await _context.Courses.FindAsync(id);
+
+        if (course == null)
         {
-            _context = context;
+            return NotFound();
         }
 
-        // GET: api/Courses
-        [HttpGet("{pageIndex}/{pageSize}")]
-        public async Task<IActionResult> GetCourses(int pageIndex, int pageSize)
+        return course;
+    }
+
+    // PUT: api/Courses/5
+    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+    [HttpPut("{id}")]
+    public async Task<IActionResult> PutCourse(int id, Course course)
+    {
+        if (id != course.CourseId)
         {
-            var data = _context.Courses.OrderBy(c => c.CourseId).AsQueryable();
-
-            var total = await data.CountAsync();
-
-            var totalPages = (int)Math.Ceiling(total / (double)pageSize);
-
-            var courses = await data
-                .Skip((pageIndex - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return Ok(new { data = courses, total, totalPages });
+            return BadRequest();
         }
 
-        // GET: api/Courses/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Course>> GetCourse(int id)
-        {
-            var course = await _context.Courses.FindAsync(id);
+        _context.Entry(course).State = EntityState.Modified;
 
-            if (course == null)
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!CourseExists(id))
             {
                 return NotFound();
             }
-
-            return course;
-        }
-
-        // PUT: api/Courses/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutCourse(int id, Course course)
-        {
-            if (id != course.CourseId)
+            else
             {
-                return BadRequest();
+                throw;
             }
-
-            _context.Entry(course).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CourseExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
         }
 
-        // POST: api/Courses
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Course>> PostCourse(Course course)
+        return NoContent();
+    }
+
+    // POST: api/Courses
+    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+    [HttpPost]
+    public async Task<ActionResult<Course>> PostCourse(Course course)
+    {
+        _context.Courses.Add(course);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction("GetCourse", new { id = course.CourseId }, course);
+    }
+
+    // DELETE: api/Courses/5
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCourse(int id)
+    {
+        var course = await _context.Courses.FindAsync(id);
+        if (course == null)
         {
-            _context.Courses.Add(course);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetCourse", new { id = course.CourseId }, course);
+            return NotFound();
         }
 
-        // DELETE: api/Courses/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCourse(int id)
-        {
-            var course = await _context.Courses.FindAsync(id);
-            if (course == null)
-            {
-                return NotFound();
-            }
+        _context.Courses.Remove(course);
+        await _context.SaveChangesAsync();
 
-            _context.Courses.Remove(course);
-            await _context.SaveChangesAsync();
+        return NoContent();
+    }
 
-            return NoContent();
-        }
-
-        private bool CourseExists(int id)
-        {
-            return _context.Courses.Any(e => e.CourseId == id);
-        }
+    private bool CourseExists(int id)
+    {
+        return _context.Courses.Any(e => e.CourseId == id);
     }
 }
